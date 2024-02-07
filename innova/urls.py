@@ -1,6 +1,7 @@
 
 from django.contrib import admin
 from django.urls import path, re_path, include
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -15,3 +16,4 @@ urlpatterns = [
     re_path('',include('applications.usuarios_inova.url')),
 ]
 
+urlpatterns+=staticfiles_urlpatterns()
