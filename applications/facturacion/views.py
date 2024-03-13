@@ -27,6 +27,9 @@ from reportlab.platypus import Image
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from io import BytesIO
+from django.templatetags.static import static
+
+
 
 today = date.today()
 
@@ -194,6 +197,7 @@ def Rep_Fact_pdf(request):
     reporte = REPORTE_FACT.objects.filter(fecha_factura__range=[fecha_ini,fecha_fin]).order_by('-pk').all()
     suma_fact = REPORTE_FACT.objects.filter(fecha_factura__range=[fecha_ini,fecha_fin]).aggregate(Sum('total_factura'))['total_factura__sum']
 
+
     if request.method=='POST':
 
         fecha_ini=datetime.strptime(request.POST['fecha'], '%Y-%m-%d').strftime('%Y-%m-%d')
@@ -237,63 +241,68 @@ def Rep_Fact_prod(request):
 
 class reciboPdf1(View):
     def get(self,request,*args,**kwargs):
-        usuario=str(request.user)
-        user_suc=listUsuarios()
-        suc=""
-        
-        for us_suc in user_suc:
-            data=str(us_suc).replace("'","").replace(")","").replace("(","")
-            usuario_model=((data[int(data.find(',')+1):100]).replace(" ","")).replace(" ","")
-
-            if usuario_model==usuario:
-                suc=(data[0:int(data.find(','))])
 
 
-        factura=REPORTE_FACT.objects.get(pk=self.kwargs['pk']),
-        n_factura=REPORTE_FACT.objects.values_list('factura').filter(pk=self.kwargs['pk'])[0]
-        n_fact_dep=str(n_factura).replace("'","").replace(")","").replace("(","").replace(",","")
-
-        ordenes=detalleFactura.objects.filter(factura=n_fact_dep)
-
-        inf_factu = info_facturas.objects.get(sucursal=suc)
-
-        valor_uno=inf_factu.numeracion
-        valor_dos=str(inf_factu.rango_inicial)
-        valor_tres=str(inf_factu.rango_final)
-
-        if len(valor_dos) < 8:
-            dig_ri=8-len(valor_dos)
-        for x in range(dig_ri):
-            valor_dos='0'+str(valor_dos)
-
-        if len(valor_tres) < 8:
-            dig_rf=8-len(valor_tres)
-        for x in range(dig_rf):
-            valor_tres='0'+str(valor_tres)
-
-        rango_inicial = inf_factu.numeracion+valor_dos
-        rango_final = inf_factu.numeracion+valor_tres
-        print(rango_inicial)
-
-        template=get_template('facturacion/recibo_pdf.html')
-        context={
-                'fact':factura,
-                'suc':sucursales.objects.get(nombre_sucursal=suc),
-                'fact_parm':info_facturas.objects.get(sucursal=suc),
-                'ord':ordenes,
-                'us':usuario,
-                'ri':rango_inicial,
-                'rf':rango_final,
-#                'icon':'{}{}'.format(settings.MEDIA_URL)
-                }
 
 
-        html_template= template.render(context)
-        css_url=os.path.join(settings.BASE_DIR,'static/vendor/bootstrap/css/bootstrap.min.css')
-        pdf=HTML(string=html_template,base_url=request.build_absolute_uri()).write_pdf(stylesheets=[CSS(css_url)])
-        response=HttpResponse(pdf,content_type='application/pdf')
-        #response['Content-Disposition']='attacment;filename="Recibo_Compra_'+REPORTE_FACT.objects.filter(pk=self.kwargs['pk']).values_list('nombre',flat=True).first()+'.pdf"'
-        return response 
+            usuario=str(request.user)
+            user_suc=listUsuarios()
+            suc=""
+            
+            for us_suc in user_suc:
+                data=str(us_suc).replace("'","").replace(")","").replace("(","")
+                usuario_model=((data[int(data.find(',')+1):100]).replace(" ","")).replace(" ","")
+
+                if usuario_model==usuario:
+                    suc=(data[0:int(data.find(','))])
+
+
+            factura=REPORTE_FACT.objects.get(pk=self.kwargs['pk']),
+            n_factura=REPORTE_FACT.objects.values_list('factura').filter(pk=self.kwargs['pk'])[0]
+            n_fact_dep=str(n_factura).replace("'","").replace(")","").replace("(","").replace(",","")
+
+            ordenes=detalleFactura.objects.filter(factura=n_fact_dep)
+
+            inf_factu = info_facturas.objects.get(sucursal=suc)
+
+            valor_uno=inf_factu.numeracion
+            valor_dos=str(inf_factu.rango_inicial)
+            valor_tres=str(inf_factu.rango_final)
+
+            if len(valor_dos) < 8:
+                dig_ri=8-len(valor_dos)
+            for x in range(dig_ri):
+                valor_dos='0'+str(valor_dos)
+
+            if len(valor_tres) < 8:
+                dig_rf=8-len(valor_tres)
+            for x in range(dig_rf):
+                valor_tres='0'+str(valor_tres)
+
+            rango_inicial = inf_factu.numeracion+valor_dos
+            rango_final = inf_factu.numeracion+valor_tres
+            print(rango_inicial)
+
+            template=get_template('facturacion/recibo_pdf.html')
+            context={
+                    'fact':factura,
+                    'suc':sucursales.objects.get(nombre_sucursal=suc),
+                    'fact_parm':info_facturas.objects.get(sucursal=suc),
+                    'ord':ordenes,
+                    'us':usuario,
+                    'ri':rango_inicial,
+                    'rf':rango_final,
+    #                'icon':'{}{}'.format(settings.MEDIA_URL)
+                    }
+
+
+            html_template= template.render(context)
+            css_url=os.path.join(settings.BASE_DIR,'static/vendor/bootstrap/css/bootstrap.min.css')
+            pdf=HTML(string=html_template,base_url=request.build_absolute_uri()).write_pdf(stylesheets=[CSS(css_url)])
+            response=HttpResponse(pdf,content_type='application/pdf')
+            #response['Content-Disposition']='attacment;filename="Recibo_Compra_'+REPORTE_FACT.objects.filter(pk=self.kwargs['pk']).values_list('nombre',flat=True).first()+'.pdf"'
+            return response 
+
 
 
 
@@ -306,167 +315,173 @@ class reciboPdf1(View):
 class reciboPdf(View):
     def get(self, request, *args, **kwargs):
 
-        usuario=str(request.user)
-        user_suc=listUsuarios()
-        suc=""
-        
-        for us_suc in user_suc:
-            data=str(us_suc).replace("'","").replace(")","").replace("(","")
-            usuario_model=((data[int(data.find(',')+1):100]).replace(" ","")).replace(" ","")
 
-            if usuario_model==usuario:
-                suc=(data[0:int(data.find(','))])
+        try:
 
+            usuario=str(request.user)
+            user_suc=listUsuarios()
+            suc=""
+            
+            for us_suc in user_suc:
+                data=str(us_suc).replace("'","").replace(")","").replace("(","")
+                usuario_model=((data[int(data.find(',')+1):100]).replace(" ","")).replace(" ","")
 
-        factura=REPORTE_FACT.objects.get(pk=self.kwargs['pk']),
-        n_factura=REPORTE_FACT.objects.values_list('factura').filter(pk=self.kwargs['pk'])[0]
-        n_fact_dep=str(n_factura).replace("'","").replace(")","").replace("(","").replace(",","")
-
-        ordenes=detalleFactura.objects.filter(factura=n_fact_dep)
-
-        inf_factu = info_facturas.objects.get(sucursal=suc)
-
-        valor_uno=inf_factu.numeracion
-        valor_dos=str(inf_factu.rango_inicial)
-        valor_tres=str(inf_factu.rango_final)
-
-        if len(valor_dos) < 8:
-            dig_ri=8-len(valor_dos)
-        for x in range(dig_ri):
-            valor_dos='0'+str(valor_dos)
-
-        if len(valor_tres) < 8:
-            dig_rf=8-len(valor_tres)
-        for x in range(dig_rf):
-            valor_tres='0'+str(valor_tres)
-
-        rango_inicial = inf_factu.numeracion+valor_dos
-        rango_final = inf_factu.numeracion+valor_tres
-
-        sucursal_act=sucursales.objects.get(nombre_sucursal=suc)
-        fact_param=info_facturas.objects.get(sucursal=suc)
+                if usuario_model==usuario:
+                    suc=(data[0:int(data.find(','))])
 
 
-        # Funciones de reportLab.
-        response = HttpResponse(content_type='application/pdf')
-        pdf = canvas.Canvas(response, pagesize=letter)
-        pdf.setFont("Times-Roman", 10)
+            factura=REPORTE_FACT.objects.get(pk=self.kwargs['pk']),
+            n_factura=REPORTE_FACT.objects.values_list('factura').filter(pk=self.kwargs['pk'])[0]
+            n_fact_dep=str(n_factura).replace("'","").replace(")","").replace("(","").replace(",","")
+
+            ordenes=detalleFactura.objects.filter(factura=n_fact_dep)
+
+            inf_factu = info_facturas.objects.get(sucursal=suc)
+
+            valor_uno=inf_factu.numeracion
+            valor_dos=str(inf_factu.rango_inicial)
+            valor_tres=str(inf_factu.rango_final)
+
+            if len(valor_dos) < 8:
+                dig_ri=8-len(valor_dos)
+            for x in range(dig_ri):
+                valor_dos='0'+str(valor_dos)
+
+            if len(valor_tres) < 8:
+                dig_rf=8-len(valor_tres)
+            for x in range(dig_rf):
+                valor_tres='0'+str(valor_tres)
+
+            rango_inicial = inf_factu.numeracion+valor_dos
+            rango_final = inf_factu.numeracion+valor_tres
+
+            sucursal_act=sucursales.objects.get(nombre_sucursal=suc)
+            fact_param=info_facturas.objects.get(sucursal=suc)
 
 
-        image_path = "http://25.8.120.221:6002/static/img/inova_img2.jpeg" #replace with your own image path
+            # Funciones de reportLab.
+            response = HttpResponse(content_type='application/pdf')
+            pdf = canvas.Canvas(response, pagesize=letter)
+            pdf.setFont("Times-Roman", 10)
 
-        pdf.drawImage(image_path, 250, 700, width=80, height=50)
-        
-        pdf.setTitle("Factura PDF")  # set the document title
 
-        pos=680
+#            image_path = "http://25.8.120.221:6002/static/img/inova_img2.jpeg" #replace with your own image path
+#            image_path = static("img/inova_img2.jpeg")
 
-        # Add the receipt title.
-        pdf.drawCentredString(300, pos, "CEMEP")
-        pos=pos-15
-        pdf.drawCentredString(300, pos, "CENTRO DE EVALUACIONES MEDICAS Y PSICOLOGICAS")
-        pos=pos-15
-        pdf.drawCentredString(300,pos,sucursal_act.direccion.upper())
-        pos=pos-20
-        pdf.drawCentredString(300,pos,"************FACTURA************")
-        pos=pos-20
-        pdf.drawString(50,pos,"INVERSIONES INOVA S DE RL DE CV")
-        pos=pos-15
-        pdf.drawString(50,pos,"TELEFONO: "+sucursal_act.telefono+"   "+"CORREO: "+sucursal_act.correo)
-        pos=pos-15
-        pdf.drawString(50,pos,"RTN: "+sucursal_act.rtn)
-        pos=pos-15
-        pdf.drawString(50,pos,"CAI: "+inf_factu.cai)
+#            pdf.drawImage(image_path, 250, 700, width=80, height=50)
+            
+            pdf.setTitle("Factura PDF")  # set the document title
 
-        for fac_p in factura:
-            fact_sbt=fac_p.sub_total
-            descuento=fac_p.descuento
-            impuesto=fac_p.impuesto
-            tot_fact=fac_p.total_factura
-            t_pago=fac_p.tipo_pago
-            cliente=fac_p.nombre.upper()
+            pos=680
 
+            # Add the receipt title.
+            pdf.drawCentredString(300, pos, "CEMEP")
             pos=pos-15
-            pdf.drawString(50,pos,"FACTURA: "+fac_p.factura)
+            pdf.drawCentredString(300, pos, "CENTRO DE EVALUACIONES MEDICAS Y PSICOLOGICAS")
             pos=pos-15
-            pdf.drawString(50,pos,"FECHA: "+str(fac_p.fecha_factura))
-            pos=pos-15
-            pdf.drawString(50,pos,"VENDEDOR: "+fac_p.vendedor.upper())
+            pdf.drawCentredString(300,pos,sucursal_act.direccion.upper())
             pos=pos-20
-            pdf.drawString(50,pos,"CLIENTE: "+cliente)
+            pdf.drawCentredString(300,pos,"************FACTURA************")
+            pos=pos-20
+            pdf.drawString(50,pos,"INVERSIONES INOVA S DE RL DE CV")
             pos=pos-15
-            pdf.drawString(50,pos,"IDENTIDAD / RTN: "+fac_p.identidad)
-        pos=pos-20
-        pdf.drawString(50,pos,"No COMPRA EXCENTA: No REGISTRO SAG")
-        pos=pos-15        
-        pdf.drawString(50,pos,"No CONSTANCIA REGISTRO EXONERADO")
-        pos=pos-15        
-        pdf.drawString(50,pos,"ORIGINAL: CLIENTE COPIA: OBLIGADO TRIBUTARIO EMISOR")
-        pos=pos-20
-        pdf.drawString(50,pos,"DESCRIPCION                                                                                           CANT.                 P.U               TOTAL")
-        pos=pos-15
-        pdf.drawString(50,pos,"--------------------------------------------------------------------------------------------------------------------------------------")        
+            pdf.drawString(50,pos,"TELEFONO: "+sucursal_act.telefono+"   "+"CORREO: "+sucursal_act.correo)
+            pos=pos-15
+            pdf.drawString(50,pos,"RTN: "+sucursal_act.rtn)
+            pos=pos-15
+            pdf.drawString(50,pos,"CAI: "+inf_factu.cai)
+
+            for fac_p in factura:
+                fact_sbt=fac_p.sub_total
+                descuento=fac_p.descuento
+                impuesto=fac_p.impuesto
+                tot_fact=fac_p.total_factura
+                t_pago=fac_p.tipo_pago
+                cliente=fac_p.nombre.upper()
+
+                pos=pos-15
+                pdf.drawString(50,pos,"FACTURA: "+fac_p.factura)
+                pos=pos-15
+                pdf.drawString(50,pos,"FECHA: "+str(fac_p.fecha_factura))
+                pos=pos-15
+                pdf.drawString(50,pos,"VENDEDOR: "+fac_p.vendedor.upper())
+                pos=pos-20
+                pdf.drawString(50,pos,"CLIENTE: "+cliente)
+                pos=pos-15
+                pdf.drawString(50,pos,"IDENTIDAD / RTN: "+fac_p.identidad)
+            pos=pos-20
+            pdf.drawString(50,pos,"No COMPRA EXCENTA: No REGISTRO SAG")
+            pos=pos-15        
+            pdf.drawString(50,pos,"No CONSTANCIA REGISTRO EXONERADO")
+            pos=pos-15        
+            pdf.drawString(50,pos,"ORIGINAL: CLIENTE COPIA: OBLIGADO TRIBUTARIO EMISOR")
+            pos=pos-20
+            pdf.drawString(50,pos,"DESCRIPCION                                                                                           CANT.                 P.U               TOTAL")
+            pos=pos-15
+            pdf.drawString(50,pos,"--------------------------------------------------------------------------------------------------------------------------------------")        
 
 
-        for ord_act in ordenes:
+            for ord_act in ordenes:
+                pos=pos-15                        
+                pdf.drawString(50,pos,ord_act.nombre.upper())            
+                pdf.drawString(345,pos,str(ord_act.cantidad))            
+                pdf.drawString(415,pos,"L "+str(ord_act.precio))    
+                pdf.drawString(470,pos,"L "+str(ord_act.sub_total))    
             pos=pos-15                        
-            pdf.drawString(50,pos,ord_act.nombre.upper())            
-            pdf.drawString(345,pos,str(ord_act.cantidad))            
-            pdf.drawString(415,pos,"L "+str(ord_act.precio))    
-            pdf.drawString(470,pos,"L "+str(ord_act.sub_total))    
-        pos=pos-15                        
-        pdf.drawString(50,pos,"--------------------------------------------------------------------------------------------------------------------------------------")        
+            pdf.drawString(50,pos,"--------------------------------------------------------------------------------------------------------------------------------------")        
 
-        pos=pos-15                        
-        pdf.drawString(380,pos,"IMPORTE")
-        pdf.drawString(470,pos,"L "+str(fact_sbt))
-        pos=pos-15                        
-        pdf.drawString(310,pos,"IMPORTE EXPONERADO")
-        pos=pos-15                        
-        pdf.drawString(338,pos,"IMPORTE EXENTO")
-        pos=pos-15                        
-        pdf.drawString(342,pos,"IMPORTE ISV 15%")
-        pdf.drawString(470,pos,"L "+str(fact_sbt))
-        pos=pos-15                        
-        pdf.drawString(342,pos,"IMPORTE ISV 18%")
-        pos=pos-15                        
-        pdf.drawString(304,pos,"DESCUENTO O REBAJAS%")
-        pdf.drawString(470,pos,"L "+str(impuesto))
-        pos=pos-15                        
-        pdf.drawString(390,pos,"ISV 15%")
-        pdf.drawString(470,pos,"L "+str(descuento))
-        pos=pos-15                        
-        pdf.drawString(390,pos,"ISV 18%")
-        pos=pos-15                        
-        pdf.drawString(394,pos,"TOTAL")
-        pdf.drawString(470,pos,"L "+str(tot_fact))
+            pos=pos-15                        
+            pdf.drawString(380,pos,"IMPORTE")
+            pdf.drawString(470,pos,"L "+str(fact_sbt))
+            pos=pos-15                        
+            pdf.drawString(310,pos,"IMPORTE EXPONERADO")
+            pos=pos-15                        
+            pdf.drawString(338,pos,"IMPORTE EXENTO")
+            pos=pos-15                        
+            pdf.drawString(342,pos,"IMPORTE ISV 15%")
+            pdf.drawString(470,pos,"L "+str(fact_sbt))
+            pos=pos-15                        
+            pdf.drawString(342,pos,"IMPORTE ISV 18%")
+            pos=pos-15                        
+            pdf.drawString(304,pos,"DESCUENTO O REBAJAS%")
+            pdf.drawString(470,pos,"L "+str(impuesto))
+            pos=pos-15                        
+            pdf.drawString(390,pos,"ISV 15%")
+            pdf.drawString(470,pos,"L "+str(descuento))
+            pos=pos-15                        
+            pdf.drawString(390,pos,"ISV 18%")
+            pos=pos-15                        
+            pdf.drawString(394,pos,"TOTAL")
+            pdf.drawString(470,pos,"L "+str(tot_fact))
 
-        tipo_pag=""
-        if t_pago=='1':
-            tipo_pag="EFECTIVO"
-        elif t_pago=='2':
-            tipo_pag="TARJETA VISA"            
-        elif t_pago=='3':
-            tipo_pag="TARJETA MASTERCARD"            
+            tipo_pag=""
+            if t_pago=='1':
+                tipo_pag="EFECTIVO"
+            elif t_pago=='2':
+                tipo_pag="TARJETA VISA"            
+            elif t_pago=='3':
+                tipo_pag="TARJETA MASTERCARD"            
 
-        pos=pos-20                        
-        pdf.drawString(50,pos,"PAGO: "+tipo_pag)
-        pos=pos-15                                
-        pdf.drawString(50,pos,"CAJERO CODIGO: "+usuario.upper())
-        pos=pos-15
-        pdf.drawString(50,pos,"RANGO AUTORIZADO DE FACTURA LIMITE DE EMISIÓN: "+str(inf_factu.fecha_lim_em))
-        pos=pos-15
-        pdf.drawString(50,pos,rango_inicial+" AL "+rango_final)
- 
+            pos=pos-20                        
+            pdf.drawString(50,pos,"PAGO: "+tipo_pag)
+            pos=pos-15                                
+            pdf.drawString(50,pos,"CAJERO CODIGO: "+usuario.upper())
+            pos=pos-15
+            pdf.drawString(50,pos,"RANGO AUTORIZADO DE FACTURA LIMITE DE EMISIÓN: "+str(inf_factu.fecha_lim_em))
+            pos=pos-15
+            pdf.drawString(50,pos,rango_inicial+" AL "+rango_final)
+    
 
-        response['Content-Disposition'] = 'attachment; filename="factura_'+cliente.replace(" ","_")+'.pdf"'
-        pdf.save()
+            response['Content-Disposition'] = 'attachment; filename="factura_'+cliente.replace(" ","_")+'.pdf"'
+            pdf.save()
 
 
 
-        return response
+            return response
 
+        except Exception as e:
 
+            return render(request, 'home/error.html',{"error":e})
 
 
 
@@ -478,27 +493,50 @@ def rep_cierre_diario(request):
     fondo_caja=5000
 
 
+    tot_adel=''
+    det_adel=''
+    det_prod=''
+    det_mp=''
+    tot_cant_adel=''
+    det_arqueo=''
+    total_arqueo=''
+    tot_vent_efe_c=''
+    cd_tot_ord=''
+    tot_adel1=''
     try: 
 
-        tot_ventas = str(cierre_diario_tot_vent.objects.filter(fecha_factura__range=[fecha_atras, fecha_hoy]).aggregate(total=Func(Sum('total_ventas'), 0, function='COALESCE'))).replace("{'total':",'').replace('}','')
+        tot_ventas = cierre_diario_tot_vent.objects.filter(fecha_factura__range=[fecha_atras, fecha_hoy]).aggregate(total_ventas_sum=Sum('total_ventas')).get('total_ventas_sum', 0) or 0
         cd_vend=cierre_diario_vend.objects.filter(fecha_factura__range=[fecha_atras,fecha_hoy]).values('vendedor').annotate(total_monto_venta=Sum('monto_venta'),cant_ventas=Sum('total_facturas'),total_adelanto=Sum('monto_adelanto'),total_adelantos=Sum('adelantos'),total_a_pagar=Sum('total_pago')).all()
+
+
         cd_tot_ord = str(cierre_diario_vend.objects.filter(fecha_factura__range=[fecha_atras, fecha_hoy]).aggregate(total_fact=Func(Sum('total_facturas'), 0, function='COALESCE'))).replace("{'total_fact':",'').replace('}','')
 
+        tot_adel = adelantos.objects.filter(fecha_solicitud__range=[fecha_atras, fecha_hoy]).aggregate(total_add=Sum('cantidad')).get('total_add',0) or 0
+        print(tot_adel)
 
-        tot_adel = str(adelantos.objects.filter(fecha_solicitud__range=[fecha_atras, fecha_hoy]).aggregate(total_add=Func(Sum('cantidad'), 0, function='COALESCE'))).replace("{'total_add':",'').replace('}','')
         det_adel=adelantos.objects.filter(fecha_solicitud__range=[fecha_atras,fecha_hoy]).values('solicitante').annotate(total_monto_sol=Sum('cantidad'),total_cant_adel=Count('cantidad')).all()
 
         det_prod=cierre_diario_tot_prod.objects.filter(fecha_factura__range=[fecha_atras,fecha_hoy]).values('nombre').annotate(tot_mont_fact=Sum('total_facturado'),tot_or=Sum('total_ordenes')).all()
-        det_mp=cierre_diario_tot_mp.objects.filter(fecha_factura__range=[fecha_atras,fecha_hoy]).values('tipo_pago').annotate(tot_mont_mp=Sum('total_ventas')).all()
         tot_cant_adel = str(adelantos.objects.filter(fecha_solicitud__range=[fecha_atras, fecha_hoy]).aggregate(cant_adel=Func(Count('cantidad'), 0, function='COALESCE'))).replace("{'cant_adel':",'').replace('}','')
 
-        det_arqueo=rep_arqueo_caja.objects.filter(fecha_registro__range=[fecha_atras,fecha_hoy]).values('billete').annotate(total_cant_bill=Sum('cantidad'),total_cant_mont=Sum('monto_total')).all()
-        total_arqueo = str(rep_arqueo_caja.objects.filter(fecha_registro__range=[fecha_atras, fecha_hoy]).aggregate(total_arq=Func(Sum('monto_total'), 0, function='COALESCE'))).replace("{'total_arq':",'').replace('}','')
+        det_mp=cierre_diario_tot_mp.objects.filter(fecha_factura__range=[fecha_atras,fecha_hoy]).values('tipo_pago').annotate(tot_mont_mp=Sum('total_ventas')).all()
 
-        tot_vent_efe_c=int(total_arqueo)-fondo_caja
+#        det_arqueo=rep_arqueo_caja.objects.filter(fecha_registro__range=[fecha_atras,fecha_hoy]).values('billete').annotate(total_cant_bill=Sum('cantidad'),total_cant_mont=Sum('monto_total')).all()
+#        total_arqueo = str(rep_arqueo_caja.objects.filter(fecha_registro__range=[fecha_atras, fecha_hoy]).aggregate(total_arq=Func(Sum('monto_total'), 0, function='COALESCE'))).replace("{'total_arq':",'').replace('}','')
 
-    except:
-        print('Hubo un problema al consultar informacion de las bases de datos')
+#        tot_vent_efe_c=int(total_arqueo)-fondo_caja
+
+
+
+
+    except Exception as e:
+
+        print('Se produjo este error: ',e)
+        print('ver',tot_adel1)
+
+        #return JsonResponse(data, safe=False)
+        #return render(request, 'home/error.html',{"error":e})
+
 
 
     if request.method=='POST':
@@ -509,12 +547,13 @@ def rep_cierre_diario(request):
 
         try: 
 
-            tot_ventas = str(cierre_diario_tot_vent.objects.filter(fecha_factura__range=[fecha_atras, fecha_hoy]).aggregate(total=Func(Sum('total_ventas'), 0, function='COALESCE'))).replace("{'total':",'').replace('}','')
+
+            tot_ventas = cierre_diario_tot_vent.objects.filter(fecha_factura__range=[fecha_atras, fecha_hoy]).aggregate(total_ventas_sum=Sum('total_ventas')).get('total_ventas_sum', 0) or 0
             cd_vend=cierre_diario_vend.objects.filter(fecha_factura__range=[fecha_atras,fecha_hoy]).values('vendedor').annotate(total_monto_venta=Sum('monto_venta'),cant_ventas=Sum('total_facturas'),total_adelanto=Sum('monto_adelanto'),total_adelantos=Sum('adelantos'),total_a_pagar=Sum('total_pago')).all()
             cd_tot_ord = str(cierre_diario_vend.objects.filter(fecha_factura__range=[fecha_atras, fecha_hoy]).aggregate(total_fact=Func(Sum('total_facturas'), 0, function='COALESCE'))).replace("{'total_fact':",'').replace('}','')
 
 
-            tot_adel = str(adelantos.objects.filter(fecha_solicitud__range=[fecha_atras, fecha_hoy]).aggregate(total_add=Func(Sum('cantidad'), 0, function='COALESCE'))).replace("{'total_add':",'').replace('}','')
+            tot_adel = adelantos.objects.filter(fecha_solicitud__range=[fecha_atras, fecha_hoy]).aggregate(total_add=Sum('cantidad')).get('total_add',0) or 0
             det_adel=adelantos.objects.filter(fecha_solicitud__range=[fecha_atras,fecha_hoy]).values('solicitante').annotate(total_monto_sol=Sum('cantidad'),total_cant_adel=Count('cantidad')).all()
             tot_cant_adel = str(adelantos.objects.filter(fecha_solicitud__range=[fecha_atras, fecha_hoy]).aggregate(cant_adel=Func(Count('cantidad'), 0, function='COALESCE'))).replace("{'cant_adel':",'').replace('}','')
 
@@ -524,10 +563,10 @@ def rep_cierre_diario(request):
 
 
 
-            det_arqueo=rep_arqueo_caja.objects.filter(fecha_registro__range=[fecha_atras,fecha_hoy]).values('billete').annotate(total_cant_bill=Sum('cantidad'),total_cant_mont=Sum('monto_total')).all()
-            total_arqueo = str(rep_arqueo_caja.objects.filter(fecha_registro__range=[fecha_atras, fecha_hoy]).aggregate(total_arq=Func(Sum('monto_total'), 0, function='COALESCE'))).replace("{'total_arq':",'').replace('}','')
+#            det_arqueo=rep_arqueo_caja.objects.filter(fecha_registro__range=[fecha_atras,fecha_hoy]).values('billete').annotate(total_cant_bill=Sum('cantidad'),total_cant_mont=Sum('monto_total')).all()
+#            total_arqueo = str(rep_arqueo_caja.objects.filter(fecha_registro__range=[fecha_atras, fecha_hoy]).aggregate(total_arq=Func(Sum('monto_total'), 0, function='COALESCE'))).replace("{'total_arq':",'').replace('}','')
 
-            tot_vent_efe_c=int(total_arqueo)-fondo_caja
+#            tot_vent_efe_c=int(total_arqueo)-fondo_caja
 
         except:
             print('Hubo un error al calcular el total de ventas')        

@@ -15,7 +15,7 @@ class info_facturas(models.Model):
     sucursal=models.CharField(max_length=500,verbose_name='Sucursal',null=True)
     cai =models.CharField(max_length=500,verbose_name='numero cai',null=True)
     def __str__(self):
-        return self.fac_actual
+        return str(self.fac_actual)
 
 
 class inventProd(models.Model):

@@ -132,158 +132,187 @@ def crearFacturas(request):
     ult_cli =Pacientes.objects.last()
     form_fecha=form_bus()
 
-    data_inv=[]
-    for inv in inventProd.objects.filter(cantidad_inv__lte=25).all():
-        data_inv.append(inv.producto)        
+    try:
 
-    inv_fuera = json.dumps(data_inv)
+        data_inv=[]
+        for inv in inventProd.objects.filter(cantidad_inv__lte=25).all():
+            data_inv.append(inv.producto)        
 
-    ult_fact=encabezadoFactura.objects.values_list('factura',flat=True).last();
+        inv_fuera = json.dumps(data_inv)
 
-    isv = info_facturas.objects.values_list('isv').distinct()
-    isv = str(isv[0]).replace(",", "").replace("(", "").replace(")", "")
+        ult_fact=encabezadoFactura.objects.values_list('factura',flat=True).last();
 
-
-
-    factura = info_facturas.objects.values_list('numeracion').distinct()
-    factura = str(factura[0]).replace(",", "").replace(
-        "(", "").replace(")", "").replace("'", "")
-
-    usuario=str(request.user)
-
-    user_suc=listUsuarios()
-    suc=""
-
-    for us_suc in user_suc:
-        data=str(us_suc).replace("'","").replace(")","").replace("(","")
-        usuario_model=((data[int(data.find(',')+1):100]).replace(" ","")).replace(" ","")
-
-        if usuario_model==usuario:
-            suc=(data[0:int(data.find(','))])
-
-    numero = info_facturas.objects.filter(sucursal=suc).values_list('fac_actual').distinct()
-    numero = str(numero[0]).replace(",", "").replace("(", "").replace(")", "")
-
-    rango_final = info_facturas.objects.filter(sucursal=suc).values_list('rango_final').distinct()
-    rango_final = str(rango_final[0]).replace(",", "").replace("(", "").replace(")", "")
-
-    excede=''
-    if int(rango_final) < int(numero):
-        excede='Si'
-    else:
-        excede='No'
-
-    print(int(rango_final),int(numero))
-
-    ubicacionsuc=sucursales.objects.filter(nombre_sucursal=suc).values_list('direccion',flat=True)[0]
-    cai=info_facturas.objects.filter(sucursal=suc).values_list('cai',flat=True)[0]
-
-    dir_cli=suc+','+ubicacionsuc
+        isv = info_facturas.objects.values_list('isv').distinct()
+        isv = str(isv[0]).replace(",", "").replace("(", "").replace(")", "")
 
 
-    #Calculando valor correcto para la factura
-    if len(numero) < 8:
-        digitos=8-len(numero)
-    print(digitos)
-    for x in range(digitos):
-         numero='0'+str(numero)
 
-    factura = factura+numero
 
-    if request.method == 'POST':
-        action = (request.POST['action'])
-        data = []
-        if action == 'autocomplete':
-            for i in Pacientes.objects.filter(nombre__icontains=request.POST['term']):
-                item = i.toJSON()
-                item['value'] = i.nombre
-                data.append(item)
-        elif action == 'autocomplete_ord':
-            for o in ordenes.objects.filter(nombre_orden__icontains=request.POST['term']):
-                item = o.toJSON()
-                item['value'] = o.nombre_orden
-                data.append(item)
-        elif request.method == 'POST':
-            hedFactura = json.loads(request.POST['hedFactura'])
-            head = encabezadoFactura()
 
-            head.nombre = hedFactura['nombre_cliente']
-            head.identidad = hedFactura['rtn']
-            head.telefono = hedFactura['telefono']
-            head.direccion = hedFactura['direccion']
-            head.factura = hedFactura['factura']
-            head.total_factura = hedFactura['total_facturado']
-            head.descuento = hedFactura['descuento']
-            head.impuesto = hedFactura['impuesto_cob']
-            head.fecha_factura = hedFactura['fecha_facturacion']
-            head.sub_total = hedFactura['subtotal']
-            head.vendedor=hedFactura['vendedor']
-            head.tipo_pago=hedFactura['tipo_pago']
+        factura = info_facturas.objects.values_list('numeracion').distinct()
+        factura = str(factura[0]).replace(",", "").replace(
+            "(", "").replace(")", "").replace("'", "")
 
-            head.save()
-            for i in hedFactura['ordenes']:
-                det = detalleFactura()
-                det.fecha_factura = hedFactura['fecha_facturacion']
-                det.factura = hedFactura['factura']
-                det.cod_ord = i['cod_ord']
-                det.nombre = i['nombre_orden']
-                det.descripcion = i['descripcion_orden']
-                det.precio = float(i['precio_orden'])
-                det.sub_total = float(i['subtotal'])
-                det.cantidad = int(i['cantidad'])
-                det.save()
+        usuario=str(request.user)
 
-            orden_trabajo = ordenes_emitidas(request.POST)
+        user_suc=listUsuarios()
+        suc=""
 
-            
-            for s in hedFactura['ordenes']:
-                orden_trabajo.cod_ord = s['cod_ord']
-                orden_trabajo.nombre_orden = s['nombre_orden']
-                enc = ordenes.objects.filter(
-                    cod_ord=s['cod_ord']).values_list('encargado_orden')
-                enc = str(enc[0]).replace("'", "").replace("[", "").replace("]", "").replace(
-                    "'", "").replace(",", "").replace("(", "").replace(")", "")
-                orden_trabajo.estado = 'Pendiente'
-                orden_trabajo.encargado_orden = enc
-                orden_trabajo.fecha_emision = datetime.now()
-                cantidad=int(s['cantidad'])
 
-                id_orden=ordenes.objects.filter(cod_ord=orden_trabajo.cod_ord).filter(nombre_orden=orden_trabajo.nombre_orden).values_list('pk',flat=True)[0]
-                print('Esta es la orden',str(id_orden))
-                det_inv=detalle_inv.objects.filter(ordenes_id=id_orden)
 
-                for de in det_inv: 
-                    producto=inventProd.objects.filter(pk=de.inventprod_id).values_list('producto',flat=True).first()
-                    prod_inv=inventProd.objects.filter(pk=de.inventprod_id).values_list('cantidad_inv',flat=True).first()
-                    print('Viendo producto e inventario',producto,' ',str(prod_inv))
+        for us_suc in user_suc:
+            data=str(us_suc).replace("'","").replace(")","").replace("(","")
+            usuario_model=((data[int(data.find(',')+1):100]).replace(" ","")).replace(" ","")
 
-                    inventProd.objects.filter(pk=de.inventprod_id).update(cantidad_inv=int(prod_inv)-1)           
-    
-                    prod_inv=inventProd.objects.filter(pk=de.inventprod_id).values_list('cantidad_inv',flat=True).first()
-                    print('Nuevo inventario',producto,' ',str(prod_inv))
+            if usuario_model==usuario:
+                suc=(data[0:int(data.find(','))])
 
-                formulario=ordenes.objects.filter(nombre_orden=orden_trabajo.nombre_orden).values_list('formulario',flat=True)[0]    
 
-                if cantidad > 1:  
-                    for r in range(cantidad):
-                        #Ingresando el detalle de la factura
+
+
+
+        numero = info_facturas.objects.filter(sucursal=suc).values_list('fac_actual').distinct()
+
+
+        print('Viendo si llegue aqui...',numero,suc)
+
+        numero = str(numero[0]).replace(",", "").replace("(", "").replace(")", "")
+
+
+
+
+        rango_final = info_facturas.objects.filter(sucursal=suc).values_list('rango_final').distinct()
+        rango_final = str(rango_final[0]).replace(",", "").replace("(", "").replace(")", "")
+
+        excede=''
+        if int(rango_final) < int(numero):
+            excede='Si'
+        else:
+            excede='No'
+
+        print(int(rango_final),int(numero))
+
+
+
+
+        ubicacionsuc=sucursales.objects.filter(nombre_sucursal=suc).values_list('direccion',flat=True)[0]
+        cai=info_facturas.objects.filter(sucursal=suc).values_list('cai',flat=True)[0]
+
+        dir_cli=suc+','+ubicacionsuc
+
+
+
+
+        #Calculando valor correcto para la factura
+        if len(numero) < 8:
+            digitos=8-len(numero)
+        print(digitos)
+        for x in range(digitos):
+            numero='0'+str(numero)
+
+        factura = factura+numero
+
+        if request.method == 'POST':
+            action = (request.POST['action'])
+            data = []
+            if action == 'autocomplete':
+                for i in Pacientes.objects.filter(nombre__icontains=request.POST['term']):
+                    item = i.toJSON()
+                    item['value'] = i.nombre
+                    data.append(item)
+            elif action == 'autocomplete_ord':
+                for o in ordenes.objects.filter(nombre_orden__icontains=request.POST['term']):
+                    item = o.toJSON()
+                    item['value'] = o.nombre_orden
+                    data.append(item)
+            elif request.method == 'POST':
+                hedFactura = json.loads(request.POST['hedFactura'])
+                head = encabezadoFactura()
+
+                head.nombre = hedFactura['nombre_cliente']
+                head.identidad = hedFactura['rtn']
+                head.telefono = hedFactura['telefono']
+                head.direccion = hedFactura['direccion']
+                head.factura = hedFactura['factura']
+                head.total_factura = hedFactura['total_facturado']
+                head.descuento = hedFactura['descuento']
+                head.impuesto = hedFactura['impuesto_cob']
+                head.fecha_factura = hedFactura['fecha_facturacion']
+                head.sub_total = hedFactura['subtotal']
+                head.vendedor=hedFactura['vendedor']
+                head.tipo_pago=hedFactura['tipo_pago']
+
+                head.save()
+                for i in hedFactura['ordenes']:
+                    det = detalleFactura()
+                    det.fecha_factura = hedFactura['fecha_facturacion']
+                    det.factura = hedFactura['factura']
+                    det.cod_ord = i['cod_ord']
+                    det.nombre = i['nombre_orden']
+                    det.descripcion = i['descripcion_orden']
+                    det.precio = float(i['precio_orden'])
+                    det.sub_total = float(i['subtotal'])
+                    det.cantidad = int(i['cantidad'])
+                    det.save()
+
+                orden_trabajo = ordenes_emitidas(request.POST)
+
+                
+                for s in hedFactura['ordenes']:
+                    orden_trabajo.cod_ord = s['cod_ord']
+                    orden_trabajo.nombre_orden = s['nombre_orden']
+                    enc = ordenes.objects.filter(
+                        cod_ord=s['cod_ord']).values_list('encargado_orden')
+                    enc = str(enc[0]).replace("'", "").replace("[", "").replace("]", "").replace(
+                        "'", "").replace(",", "").replace("(", "").replace(")", "")
+                    orden_trabajo.estado = 'Pendiente'
+                    orden_trabajo.encargado_orden = enc
+                    orden_trabajo.fecha_emision = datetime.now()
+                    cantidad=int(s['cantidad'])
+
+                    id_orden=ordenes.objects.filter(cod_ord=orden_trabajo.cod_ord).filter(nombre_orden=orden_trabajo.nombre_orden).values_list('pk',flat=True)[0]
+                    print('Esta es la orden',str(id_orden))
+                    det_inv=detalle_inv.objects.filter(ordenes_id=id_orden)
+
+                    for de in det_inv: 
+                        producto=inventProd.objects.filter(pk=de.inventprod_id).values_list('producto',flat=True).first()
+                        prod_inv=inventProd.objects.filter(pk=de.inventprod_id).values_list('cantidad_inv',flat=True).first()
+                        print('Viendo producto e inventario',producto,' ',str(prod_inv))
+
+                        inventProd.objects.filter(pk=de.inventprod_id).update(cantidad_inv=int(prod_inv)-1)           
+        
+                        prod_inv=inventProd.objects.filter(pk=de.inventprod_id).values_list('cantidad_inv',flat=True).first()
+                        print('Nuevo inventario',producto,' ',str(prod_inv))
+
+                    formulario=ordenes.objects.filter(nombre_orden=orden_trabajo.nombre_orden).values_list('formulario',flat=True)[0]    
+
+                    if cantidad > 1:  
+                        for r in range(cantidad):
+                            #Ingresando el detalle de la factura
+                            ordenes_emitidas.objects.create(cod_ord=orden_trabajo.cod_ord,nombre_orden=orden_trabajo.nombre_orden, encargado_orden=enc, estado=orden_trabajo.estado, fecha_emision=orden_trabajo.fecha_emision,paciente=head.nombre,dir_pac=head.direccion,identif_pac=head.identidad)
+
+                            #Ingresando el formulario que corresponde
+                            ordenes_emitidas.objects.filter(nombre_orden=orden_trabajo.nombre_orden).update(formulario=formulario)
+                    else:
+                            #Ingresando el detalle de la factura
                         ordenes_emitidas.objects.create(cod_ord=orden_trabajo.cod_ord,nombre_orden=orden_trabajo.nombre_orden, encargado_orden=enc, estado=orden_trabajo.estado, fecha_emision=orden_trabajo.fecha_emision,paciente=head.nombre,dir_pac=head.direccion,identif_pac=head.identidad)
 
-                        #Ingresando el formulario que corresponde
+                            #Ingresando el formulario que corresponde
                         ordenes_emitidas.objects.filter(nombre_orden=orden_trabajo.nombre_orden).update(formulario=formulario)
-                else:
-                        #Ingresando el detalle de la factura
-                     ordenes_emitidas.objects.create(cod_ord=orden_trabajo.cod_ord,nombre_orden=orden_trabajo.nombre_orden, encargado_orden=enc, estado=orden_trabajo.estado, fecha_emision=orden_trabajo.fecha_emision,paciente=head.nombre,dir_pac=head.direccion,identif_pac=head.identidad)
 
-                        #Ingresando el formulario que corresponde
-                     ordenes_emitidas.objects.filter(nombre_orden=orden_trabajo.nombre_orden).update(formulario=formulario)
+                            #Restando existencias en inventario
 
-                        #Restando existencias en inventario
+                info_facturas.objects.filter(sucursal=suc).update(fac_actual=int(numero)+1)           
 
-            info_facturas.objects.filter(sucursal=suc).update(fac_actual=int(numero)+1)           
+            return JsonResponse(data, safe=False)
+        return render(request, 'ordenes/facturafiscal_form.html', {"form_fac": form_fac, "form_cli": form_cli, "form_ord": form_ord, "isv": isv, "factura": factura,"form_vend":form_vend,"dir_cli":dir_cli,"tipo_pago":tipo_pago,"excede":excede,"cai":cai,"ult_cli":ult_cli,'inv_fuera':inv_fuera,'form_fecha':form_fecha,'ult_fact':ult_fact})
 
-        return JsonResponse(data, safe=False)
-    return render(request, 'ordenes/facturafiscal_form.html', {"form_fac": form_fac, "form_cli": form_cli, "form_ord": form_ord, "isv": isv, "factura": factura,"form_vend":form_vend,"dir_cli":dir_cli,"tipo_pago":tipo_pago,"excede":excede,"cai":cai,"ult_cli":ult_cli,'inv_fuera':inv_fuera,'form_fecha':form_fecha,'ult_fact':ult_fact})
+    except Exception as e:
+
+        print('Se produjo este error: ',e)
+
+        #return JsonResponse(data, safe=False)
+        return render(request, 'home/error.html',{"error":e})
 
 
 
@@ -388,10 +417,11 @@ class l_ordatendOpListView(ListView):
     model = ordenes_emitidas
 
     def get_queryset(self, **kwargs):
-        rol=usuario_log.objects.values_list('rol',flat=True)[0]       
-        print(rol)
+        print('Viendo aqui a ver...')
+#        rol=usuario_log.objects.values_list('rol',flat=True)[0]       
+        rol=0
 
-        if (rol ==0) or (rol ==1):
+        if (rol ==0) or (rol ==1) or (rol ==4):
             return ordenes_emitidas.objects.filter(estado='Pendiente').filter(formulario__in=[rol,3]).order_by('-pk')
         else:
             return ordenes_emitidas.objects.filter(estado='Pendiente').order_by('-pk')
