@@ -31,7 +31,9 @@
         <div style="display:none">
         <div>{% render_field form.dir_pac class="form-control hide" value=direccion placeholder=form.dir_pac.label%}</div>
         <div>{% render_field form.identif_pac class="form-control hide" value=identificacion placeholder=form.identif_pac.label%}</div>
+        <div>{% render_field form.cod_orden class="form-control hide" value=orden placeholder=form.cod_orden.label%}</div>        
         </div>
+
 
         {% csrf_token %}
         <div class="controls">    

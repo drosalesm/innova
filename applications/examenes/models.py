@@ -25,6 +25,7 @@ OPT_PREG=(
 class examen_med(models.Model):
     paciente =models.CharField(max_length=500,verbose_name="paciente")
     nombre_orden = models.CharField(max_length=100,verbose_name="Nombre de la Orden")
+    cod_orden=models.IntegerField(verbose_name='Orden',blank=True,null=True)
     fecha=models.DateField(null=True)
     dir_pac=models.CharField(max_length=500,verbose_name="Direccion",null=True)
     documento = models.FileField(null=True)

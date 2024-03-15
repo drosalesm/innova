@@ -48,6 +48,9 @@ class lisExamenMedListView(ListView):
             fecha_hoy =today.strftime('%Y-%m-%d')
             fecha_atras =date.today() + timedelta(days=-30)            
             reporte_medico = examen_med.objects.filter(fecha__range=[fecha_atras,fecha_hoy]).order_by('pk')        
+
+            print('Ver...',reporte_medico,fecha_hoy,fecha_atras)
+
         return reporte_medico
 
     def get_context_data(self,**kwargs):
@@ -68,27 +71,24 @@ class creExamenMedCreateView(CreateView):
 
 
     def get_context_data(self, **kwargs):
-        name_orden=ordenes_emitidas.objects.filter(id=self.kwargs['pk']).values_list('nombre_orden',flat=True)[0]
-        paciente=ordenes_emitidas.objects.filter(id=self.kwargs['pk']).values_list('paciente',flat=True)[0]
-        identidad=ordenes_emitidas.objects.filter(id=self.kwargs['pk']).values_list('identif_pac',flat=True)[0]
-        cod_orden=ordenes_emitidas.objects.filter(id=self.kwargs['pk']).values_list('cod_ord',flat=True)[0]
-        direccion=ordenes_emitidas.objects.filter(id=self.kwargs['pk']).values_list('dir_pac',flat=True)[0]
-        identificacion=ordenes_emitidas.objects.filter(id=self.kwargs['pk']).values_list('identif_pac',flat=True)[0]
+
+        orden=ordenes_emitidas.objects.filter(id=self.kwargs['pk']).values_list('pk','nombre_orden','paciente','identif_pac','cod_ord','dir_pac')[0]
         doctor = vendedores.objects.filter(t_empleado=0).values_list('nombre',flat=True).distinct()
+        pac=Pacientes.objects.get(identidad=orden[3])          
 
-        pac=Pacientes.objects.get(identidad=identificacion)          
 
+        print('ver: ',orden)
 
         context = super().get_context_data(**kwargs)
         context.update({
             'view_type': 'create',
-            'name_orden':name_orden,
-            'paciente':paciente,
-            'cod_orden':cod_orden,
-            'direccion':direccion,
-            'identificacion':identificacion,
+            'name_orden':orden[1],
+            'paciente':orden[2],
+            'cod_orden':orden[4],
+            'direccion':orden[5],
+            'identificacion':orden[3],
             'doctor':doctor,
-            'identidad':identidad,
+            'orden':orden[0],
             'pac':pac
         })
         return context
@@ -110,10 +110,22 @@ class updExamenMedUpdateView(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        cod_orden = examen_med.objects.filter(pk=self.kwargs['pk']).values_list('cod_orden', flat=True).first()
+
+        identificacion=ordenes_emitidas.objects.filter(id=cod_orden).values_list('identif_pac',flat=True)[0]
+
+        print(self.kwargs['pk'],identificacion)
+        pac=Pacientes.objects.get(identidad=identificacion)    
+        print(pac.nombre)
         context.update({
-            'view_type': 'update'
+            'view_type': 'update',
+            'pac':pac            
         })
         return context
+
+
+
+
 
 # Vista para eliminar examenes medicos
 @method_decorator(login_required, name='dispatch')

@@ -31,6 +31,7 @@ from django.templatetags.static import static
 
 
 
+
 today = date.today()
 
 
@@ -364,11 +365,9 @@ class reciboPdf(View):
             pdf = canvas.Canvas(response, pagesize=letter)
             pdf.setFont("Times-Roman", 10)
 
+            image_path = "http://127.0.0.1:8000/static/img/inova_img2.jpeg" 
 
-#            image_path = "http://25.8.120.221:6002/static/img/inova_img2.jpeg" #replace with your own image path
-#            image_path = static("img/inova_img2.jpeg")
-
-#            pdf.drawImage(image_path, 250, 700, width=80, height=50)
+            pdf.drawImage(image_path, 250, 700, width=80, height=50)
             
             pdf.setTitle("Factura PDF")  # set the document title
 
@@ -493,16 +492,7 @@ def rep_cierre_diario(request):
     fondo_caja=5000
 
 
-    tot_adel=''
-    det_adel=''
-    det_prod=''
-    det_mp=''
-    tot_cant_adel=''
-    det_arqueo=''
-    total_arqueo=''
-    tot_vent_efe_c=''
-    cd_tot_ord=''
-    tot_adel1=''
+ 
     try: 
 
         tot_ventas = cierre_diario_tot_vent.objects.filter(fecha_factura__range=[fecha_atras, fecha_hoy]).aggregate(total_ventas_sum=Sum('total_ventas')).get('total_ventas_sum', 0) or 0
@@ -521,10 +511,10 @@ def rep_cierre_diario(request):
 
         det_mp=cierre_diario_tot_mp.objects.filter(fecha_factura__range=[fecha_atras,fecha_hoy]).values('tipo_pago').annotate(tot_mont_mp=Sum('total_ventas')).all()
 
-#        det_arqueo=rep_arqueo_caja.objects.filter(fecha_registro__range=[fecha_atras,fecha_hoy]).values('billete').annotate(total_cant_bill=Sum('cantidad'),total_cant_mont=Sum('monto_total')).all()
-#        total_arqueo = str(rep_arqueo_caja.objects.filter(fecha_registro__range=[fecha_atras, fecha_hoy]).aggregate(total_arq=Func(Sum('monto_total'), 0, function='COALESCE'))).replace("{'total_arq':",'').replace('}','')
+        det_arqueo=rep_arqueo_caja.objects.filter(fecha_registro__range=[fecha_atras,fecha_hoy]).values('billete').annotate(total_cant_bill=Sum('cantidad'),total_cant_mont=Sum('monto_total')).all()
+        total_arqueo = str(rep_arqueo_caja.objects.filter(fecha_registro__range=[fecha_atras, fecha_hoy]).aggregate(total_arq=Func(Sum('monto_total'), 0, function='COALESCE'))).replace("{'total_arq':",'').replace('}','')
 
-#        tot_vent_efe_c=int(total_arqueo)-fondo_caja
+        tot_vent_efe_c=int(total_arqueo)-fondo_caja
 
 
 
@@ -532,10 +522,9 @@ def rep_cierre_diario(request):
     except Exception as e:
 
         print('Se produjo este error: ',e)
-        print('ver',tot_adel1)
 
         #return JsonResponse(data, safe=False)
-        #return render(request, 'home/error.html',{"error":e})
+        return render(request, 'home/error.html',{"error":e})
 
 
 
@@ -563,13 +552,16 @@ def rep_cierre_diario(request):
 
 
 
-#            det_arqueo=rep_arqueo_caja.objects.filter(fecha_registro__range=[fecha_atras,fecha_hoy]).values('billete').annotate(total_cant_bill=Sum('cantidad'),total_cant_mont=Sum('monto_total')).all()
-#            total_arqueo = str(rep_arqueo_caja.objects.filter(fecha_registro__range=[fecha_atras, fecha_hoy]).aggregate(total_arq=Func(Sum('monto_total'), 0, function='COALESCE'))).replace("{'total_arq':",'').replace('}','')
+            det_arqueo=rep_arqueo_caja.objects.filter(fecha_registro__range=[fecha_atras,fecha_hoy]).values('billete').annotate(total_cant_bill=Sum('cantidad'),total_cant_mont=Sum('monto_total')).all()
+            total_arqueo = str(rep_arqueo_caja.objects.filter(fecha_registro__range=[fecha_atras, fecha_hoy]).aggregate(total_arq=Func(Sum('monto_total'), 0, function='COALESCE'))).replace("{'total_arq':",'').replace('}','')
 
-#            tot_vent_efe_c=int(total_arqueo)-fondo_caja
+            tot_vent_efe_c=int(total_arqueo)-fondo_caja
 
-        except:
-            print('Hubo un error al calcular el total de ventas')        
+        except Exception as e:
+            print('Hubo un error al calcular el total de ventas',e)        
+
+            return render(request, 'home/error.html',{"error":e})
+
 
         return render(request,'facturacion/reporte_cierre.html',{'cd_vend':cd_vend,'form':form,'fecha_atras':fecha_atras,'fecha_hoy':fecha_hoy,'tot_ventas':tot_ventas,'tot_adel':tot_adel,'det_adel':det_adel,'det_prod':det_prod,'det_mp':det_mp,'det_arqueo':det_arqueo,'total_arqueo':total_arqueo,'tot_vent_efe_c':tot_vent_efe_c,'fondo_caja':fondo_caja,'cd_tot_ord':cd_tot_ord,'tot_cant_adel':tot_cant_adel})
     return render(request,'facturacion/reporte_cierre.html',{'cd_vend':cd_vend,'form':form,'fecha_atras':fecha_atras,'fecha_hoy':fecha_hoy,'tot_ventas':tot_ventas,'tot_adel':tot_adel,'det_adel':det_adel,'det_prod':det_prod,'det_mp':det_mp,'det_arqueo':det_arqueo,'total_arqueo':total_arqueo,'tot_vent_efe_c':tot_vent_efe_c,'fondo_caja':fondo_caja,'cd_tot_ord':cd_tot_ord,'tot_cant_adel':tot_cant_adel})
